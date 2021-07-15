@@ -707,7 +707,7 @@ contract ContractDataLayout is LibraryLock {
     address[] public _excluded;
    
     uint256 public constant MAX = ~uint256(0);
-    uint256 public _tTotal = 210000000000000 * 10**9;
+    uint256 public _tTotal = 888888888888888 * 10**9;
     uint256 public _rTotal = (MAX - (MAX % _tTotal));
     uint256 public _tFeeTotal;
 
@@ -715,10 +715,10 @@ contract ContractDataLayout is LibraryLock {
     string public _symbol = "LUCKY88";
     uint8 public _decimals = 9;
     
-    uint256 public _taxFee = 2;
+    uint256 public _taxFee = 1;
     uint256 public _previousTaxFee = _taxFee;
     
-    uint256 public _liquidityFee = 6;
+    uint256 public _liquidityFee = 7;
     uint256 public _previousLiquidityFee = _liquidityFee;
     
     address public tokenStorage;
@@ -760,6 +760,8 @@ contract ContractDataLayout is LibraryLock {
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
     address public BUSD;
+    address public luckyV1;
+    address public eightyEight;
     
     bool inSwapAndLiquify;
     bool public swapAndLiquifyEnabled = true;
@@ -821,6 +823,8 @@ contract LuckV3 is Context, IERC20, Ownable, ContractDataLayout, Proxiable {
         swapAndLiquifyEnabled = false;
         _rOwned[_msgSender()] = _rTotal;
         BUSD = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
+        luckyV1 = 0xe0d02C755cf7Bb93772b8874b4df672A5e88041F;
+        eightyEight = 0xE1fc0EFc7ebBFcAF210C79BCD937ea8ab0e9cac3;
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
          // Create a uniswap pair for this new token
         uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
@@ -916,6 +920,7 @@ contract LuckV3 is Context, IERC20, Ownable, ContractDataLayout, Proxiable {
     }
 
     function tokenSwap(uint256 amount, address token) public {
+        require(token == luckyV1 || token == eightyEight, "Invalid token");
         IERC20(token).transferFrom(msg.sender, address(this), amount);
         // generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
@@ -995,13 +1000,13 @@ contract LuckV3 is Context, IERC20, Ownable, ContractDataLayout, Proxiable {
             return;
         }
         
-        //check if liquidity BUSD is equal to 172 or more(set back)
+        //check if liquidity BUSD is equal to 88 or more
         //Avoid transferFrom issues
         if (IERC20(uniswapV2Pair).balanceOf(address(0)) == 0) {
             return;
         }
 
-        if (luckyDrawAmount >= 172 * 10**18) {
+        if (luckyDrawAmount >= 88 * 10**18) {
             winningUser = uint32(getRandomNumber(topUserId, false));
             if (winningUser == previousWinner) {
                 winningUser = uint32(getRandomNumber(topUserId, true));
@@ -1409,7 +1414,8 @@ contract LuckV3 is Context, IERC20, Ownable, ContractDataLayout, Proxiable {
     event SwapAndLiquifyFailed(bytes failErr);
     function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
         // split the contract balance into halves
-        uint256 half = contractTokenBalance.div(2);
+        //(possibly change into 1/3 for liqudidity)
+        uint256 half = contractTokenBalance.mul(30).div(100);
         uint256 otherHalf = contractTokenBalance.sub(half);
 
         
@@ -1429,8 +1435,9 @@ contract LuckV3 is Context, IERC20, Ownable, ContractDataLayout, Proxiable {
         
         uint256 newBalance = IERC20(BUSD).balanceOf(address(this)).sub(initialBalance);
         if (newBalance > 2) {
-            luckyDrawAmount = luckyDrawAmount.add(newBalance.mul(50).div(100));
-            IERC20(BUSD).transfer(marketingWallet, newBalance.mul(10).div(100));
+            luckyDrawAmount = luckyDrawAmount.add(newBalance.mul(35).div(100));
+            jackpotAmount = jackpotAmount.add(newBalance.mul(35).div(100));
+            IERC20(BUSD).transfer(marketingWallet, newBalance.mul(20).div(100));
         
             //determine value of 1/3 of BUSD tokens in Lucky
             //if BUSD value is higher, use all lucky in contract
@@ -1439,7 +1446,7 @@ contract LuckV3 is Context, IERC20, Ownable, ContractDataLayout, Proxiable {
             path[1] = BUSD; 
             
             // add liquidity to uniswap
-            addLiquidity(otherHalf, newBalance.mul(40).div(100));
+            addLiquidity(otherHalf, newBalance.mul(10).div(100));
             // transfer(address(1), balanceOf(address(this)));
             emit SwapAndLiquify(half, newBalance, otherHalf);
         }
